@@ -1,0 +1,19 @@
+# Visual Studio user-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio build output
+.vs/
+Debug/
+Release/
+x64/
+x86/
+ipch/
+*.obj
+*.pdb
+*.ilk
+*.exe
+*.dll
+
