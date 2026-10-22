@@ -19,7 +19,7 @@ double ExactUx[DY], ExactUxMod, NormalErr1, NormalErr2;
 double Mass, Density, Tau, ReTau, Viscosity, Pressure, DenLeft, DenRight, Radius, Reynolds;		
 int    TaskNum=1, No, NowStep, AllStep, ShowStep, SaveStep, BeginTime, StepTime, LastTime, LinkNum, BcType;
 
-double ParMass, ParDen, ParMom, ParRad, ParTor, ParFai, ParMove;		
+double ParMass, ParDen, ParMom, ParA, ParB, ParTor, ParFai, ParMove;
 double Sx, Sy, Fx, Fy, Vx, Vy, Va, Ax, Ay, Aa;
 
 //*************************************************************************************************
@@ -97,10 +97,11 @@ void Initialize()
 #ifdef MIGRATION
 	Sx		  = DX/2;
 	Sy		  = 45;
-	ParRad    = 12.5;
+	ParA      = 12.5;
+	ParB      = 6.25;
 	ParDen    = Density;
-	ParMass   = PI*Sq(ParRad)*ParDen; 
-	ParMom	  = 0.5*ParMass*Sq(ParRad);
+	ParMass   = PI*ParA*ParB*ParDen;
+	ParMom	  = ParMass*(Sq(ParA)+Sq(ParB))/4;
 	ParTor = ParFai = ParMove = Fx = Fy = Vx = Vy = Va = Ax = Ay = Aa = 0;
 #endif
 
@@ -341,11 +342,11 @@ void SaveData()
 	if( NowStep == 0 )
 	{ 
 		char FileName[128];
-		sprintf( FileName, "Migration_%d_%d_R%3.2f.txt", DX-1, DY-1, ParRad );
+		sprintf( FileName, "Migration_%d_%d_A%3.2f_B%3.2f.txt", DX-1, DY-1, ParA, ParB );
 		TrackFile.open( FileName );
-		TrackFile<<"Step   Mass   Sx   Sy   Vx   Vy   Va    Fx   Fy"<<endl;
+		TrackFile<<"Step   Mass   Sx   Sy   Vx   Vy   Va   Fai   Fx   Fy   Tor"<<endl;
 	}
-	TrackFile<<NowStep<<"  "<<Mass<<"  "<<(Sx+ParMove-DX/2)/100<<"  "<<Sy/100<<"  "<<Vx<<"  "<<Vy<<"  "<<Va<<"  "<<Fx<<"  "<<Fy<<endl;
+	TrackFile<<NowStep<<"  "<<Mass<<"  "<<(Sx+ParMove-DX/2)/100<<"  "<<Sy/100<<"  "<<Vx<<"  "<<Vy<<"  "<<Va<<"  "<<ParFai<<"  "<<Fx<<"  "<<Fy<<"  "<<ParTor<<endl;
 #else
 	char FileName[128];
 	ofstream File;

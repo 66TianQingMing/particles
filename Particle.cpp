@@ -13,18 +13,24 @@ extern GridData (*Grid)[DY];
 extern LinkData (*Link);
 
 extern int NowStep, LinkNum;
-extern double ParMass, ParDen, ParMom, ParRad, ParTor, ParFai, ParMove, ParForce;		
+extern double ParMass, ParDen, ParMom, ParA, ParB, ParTor, ParFai, ParMove, ParForce;
 extern double Sx, Sy, Fx, Fy, Vx, Vy, Va, Ax, Ay, Aa;
 
 //*************************************************************************************************
 double GetDelta( int i, int j, int f ) 
 {
-	double aa = Sq(Ex[f])+Sq(Ey[f]);						
-	double bb = ( (D(i)-Sx)*Ex[f] + (D(j)-Sy)*Ey[f] ) * 2;	
-	double cc = ( Sq(D(i)-Sx) + Sq(D(j)-Sy) ) - Sq(ParRad);			
+	double CosF = cos(ParFai), SinF = sin(ParFai);
+	double X0 =  CosF*(D(i)-Sx) + SinF*(D(j)-Sy);
+	double Y0 = -SinF*(D(i)-Sx) + CosF*(D(j)-Sy);
+	double Xe =  CosF*Ex[f] + SinF*Ey[f];
+	double Ye = -SinF*Ex[f] + CosF*Ey[f];
+	double aa = Sq(Xe/ParA)+Sq(Ye/ParB);
+	double bb = 2*(X0*Xe/Sq(ParA)+Y0*Ye/Sq(ParB));
+	double cc = Sq(X0/ParA)+Sq(Y0/ParB)-1;
 	double dd = bb*bb-4*aa*cc;  	{ if( dd < 0 ) dd=0; } 	
 	double Delta = (-bb-sqrt(dd))/aa/2; 
 
+	if( Delta<0 && Delta>-1E-10 )       Delta = 0;
 	if( Delta>1 && Delta<1+1E-10 )	   Delta = 1;
 	if( Delta<0 || Delta>1 )
 	{
@@ -107,14 +113,19 @@ void ParticleGeometry()
 {
 	int Hold, Born, Gone, Line;
 	LinkNum = Hold = Born = Gone = Line = 0;
+	double CosF = cos(ParFai), SinF = sin(ParFai);
+	double HalfX = sqrt(Sq(ParA*CosF)+Sq(ParB*SinF));
+	double HalfY = sqrt(Sq(ParA*SinF)+Sq(ParB*CosF));
 
 	//Check the newborn fluids and the gone fluids
-	for( int i=int(Sx-ParRad-0.01); i<=int(Sx+ParRad+1.01); ++i )
-	for( int j=int(Sy-ParRad-0.01); j<=int(Sy+ParRad+1.01); ++j )
+	for( int i=int(Sx-HalfX-0.01); i<=int(Sx+HalfX+1.01); ++i )
+	for( int j=int(Sy-HalfY-0.01); j<=int(Sy+HalfY+1.01); ++j )
 	{
 		GridData & t = Grid[i][j];
+		double X =  CosF*(D(i)-Sx) + SinF*(D(j)-Sy);
+		double Y = -SinF*(D(i)-Sx) + CosF*(D(j)-Sy);
 
-		if( Sq(Sx-i)+Sq(Sy-j) <= Sq(ParRad) )   //the nodes inside the particle;
+		if( Sq(X/ParA)+Sq(Y/ParB) <= 1 )   //the nodes inside the particle;
 		{	
 			++Hold;
 			if( t.Type != PARTICLE )
@@ -173,8 +184,8 @@ void ParticleGeometry()
 	}
 
 	//compute the delta values of the particle;
-	for( int i=int(Sx-ParRad-0.01); i<=int(Sx+ParRad+1.01); ++i )
-	for( int j=int(Sy-ParRad-0.01); j<=int(Sy+ParRad+1.01); ++j )
+	for( int i=int(Sx-HalfX-0.01); i<=int(Sx+HalfX+1.01); ++i )
+	for( int j=int(Sy-HalfY-0.01); j<=int(Sy+HalfY+1.01); ++j )
 	{
 		if( Grid[i][j].Type == MARKED )   Grid[i][j].Type = FLUID;	//new fluid node, parallel free;
 
