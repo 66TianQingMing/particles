@@ -17,6 +17,8 @@
 //*************************************************************************************************
 const int DX	= 1001; 
 const int DY	= 101;  
+const int ParticleNum = 3;
+const int LinkMax = ParticleNum*2000;
 
 //*************************************************************************************************
 const char FLUID	= 1;		
@@ -69,13 +71,19 @@ struct GridData
 	double Den, Vx, Vy;
 };
 
+struct ParticleData
+{
+	double ParMass, ParDen, ParMom, ParA, ParB, ParTor, ParFai;
+	double Sx, Sy, Fx, Fy, Vx, Vy, Va, Ax, Ay, Aa;
+};
+
 struct LinkData
 {
 	double d;
-	int i, j, f;
+	int p, i, j, f;
 	LinkData() {  };
-	LinkData( int i, int j, int f, double d )
+	LinkData( int p, int i, int j, int f, double d )
 	{
-		this->i=i;  this->j=j;  this->f=f;  this->d=d;
+		this->p=p;  this->i=i;  this->j=j;  this->f=f;  this->d=d;
 	}
 };

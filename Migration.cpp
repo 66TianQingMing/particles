@@ -11,6 +11,7 @@ using namespace std;
 double	  (*Dist)[DY][DQ];
 double	  (*Temp)[DY][DQ];
 GridData  (*Grid)[DY];
+ParticleData Particle[ParticleNum];
 LinkData  (*Link);
 const char * BcName[] = { "HBB", "BFL", "LL2" };
 
@@ -19,8 +20,7 @@ double ExactUx[DY], ExactUxMod, NormalErr1, NormalErr2;
 double Mass, Density, Tau, ReTau, Viscosity, Pressure, DenLeft, DenRight, Radius, Reynolds;		
 int    TaskNum=1, No, NowStep, AllStep, ShowStep, SaveStep, BeginTime, StepTime, LastTime, LinkNum, BcType;
 
-double ParMass, ParDen, ParMom, ParA, ParB, ParTor, ParFai, ParMove;
-double Sx, Sy, Fx, Fy, Vx, Vy, Va, Ax, Ay, Aa;
+double ParMove;
 
 //*************************************************************************************************
 void Initialize();
@@ -95,14 +95,19 @@ void Initialize()
 	BeginTime = LastTime = GetTickCount();
 
 #ifdef MIGRATION
-	Sx		  = DX/2;
-	Sy		  = 45;
-	ParA      = 12.5;
-	ParB      = 6.25;
-	ParDen    = Density;
-	ParMass   = PI*ParA*ParB*ParDen;
-	ParMom	  = ParMass*(Sq(ParA)+Sq(ParB))/4;
-	ParTor = ParFai = ParMove = Fx = Fy = Vx = Vy = Va = Ax = Ay = Aa = 0;
+	ParMove = 0;
+	for( int p=0; p<ParticleNum; ++p )
+	{
+		ParticleData & t = Particle[p];
+		t.ParA      = 12.5;
+		t.ParB      = 6.25;
+		t.ParDen    = Density;
+		t.ParMass   = PI*t.ParA*t.ParB*t.ParDen;
+		t.ParMom    = t.ParMass*(Sq(t.ParA)+Sq(t.ParB))/4;
+		t.Sx        = DX/2+(D(p)-D(ParticleNum-1)/2)*t.ParA*4;
+		t.Sy        = D(p+1)*D(DY-1)/D(ParticleNum+1);
+		t.ParTor = t.ParFai = t.Fx = t.Fy = t.Vx = t.Vy = t.Va = t.Ax = t.Ay = t.Aa = 0;
+	}
 #endif
 
 	if( No == 0 )
@@ -110,9 +115,9 @@ void Initialize()
 		Dist = new double [DX][DY][DQ];
 		Temp = new double [DX][DY][DQ]; 
 		Grid = new GridData [DX][DY];
-		Link = new LinkData [2000];
+		Link = new LinkData [LinkMax];
 
-		if( Dist==0 || Temp==0 || Grid==0 )
+		if( Dist==0 || Temp==0 || Grid==0 || Link==0 )
 		{
 			cout<<"Memory allocation is error ..."<<endl<<flush;
 			cin.get();   exit(1);
@@ -296,9 +301,14 @@ void InletAndOutlet()
 void LatticeRemesh()
 {
 	const int Span = 2;
-	if( Sx-DX/2 > Span )	
+	double CenterX = 0;
+	for( int p=0; p<ParticleNum; ++p )   CenterX += Particle[p].Sx;
+	CenterX /= ParticleNum;
+
+	if( CenterX-DX/2 > Span )
 	{
-		Sx -= Span;   ParMove += Span;
+		for( int p=0; p<ParticleNum; ++p )   Particle[p].Sx -= Span;
+		ParMove += Span;
 		for( int n=0; n<LinkNum; ++n )  Link[n].i -= Span;
 
 		for( int i=5; i<DX-5-Span; ++i )
@@ -329,7 +339,10 @@ void ShowData( )
 	NormalErr2 = sqrt(NormalErr2)/ExactUxMod;	
 
 #ifdef MIGRATION
-	cout<<"   "<<NowStep<<"   "<<setiosflags(ios::fixed)<<setprecision(10)<<Mass<<setprecision(3)<<"   "<<Sx+ParMove-DX/2<<"   "<<Sy<<setprecision(2)<<"   "<<NormalErr1*100<<"%"<<"   "<<NormalErr2*100<<"%"<<"   "<<StepTime<<endl;
+	cout<<"   "<<NowStep<<"   "<<setiosflags(ios::fixed)<<setprecision(10)<<Mass<<setprecision(3);
+	for( int p=0; p<ParticleNum; ++p )
+		cout<<"   P"<<p<<"("<<Particle[p].Sx+ParMove-DX/2<<","<<Particle[p].Sy<<","<<Particle[p].ParFai<<")";
+	cout<<setprecision(2)<<"   "<<NormalErr1*100<<"%"<<"   "<<NormalErr2*100<<"%"<<"   "<<StepTime<<endl;
 #else
 	cout<<"   "<<NowStep<<"     "<<setiosflags(ios::fixed)<<setprecision(10)<<Mass<<setprecision(2)<<"     "<<NormalErr1*100<<"%"<<"     "<<NormalErr2*100<<"%"<<"     "<<StepTime<<endl;
 #endif
@@ -342,11 +355,15 @@ void SaveData()
 	if( NowStep == 0 )
 	{ 
 		char FileName[128];
-		sprintf( FileName, "Migration_%d_%d_A%3.2f_B%3.2f.txt", DX-1, DY-1, ParA, ParB );
+		sprintf( FileName, "Migration_%d_%d_N%d_A%3.2f_B%3.2f.txt", DX-1, DY-1, ParticleNum, Particle[0].ParA, Particle[0].ParB );
 		TrackFile.open( FileName );
-		TrackFile<<"Step   Mass   Sx   Sy   Vx   Vy   Va   Fai   Fx   Fy   Tor"<<endl;
+		TrackFile<<"Step   Particle   Mass   Sx   Sy   Vx   Vy   Va   Fai   Fx   Fy   Tor"<<endl;
 	}
-	TrackFile<<NowStep<<"  "<<Mass<<"  "<<(Sx+ParMove-DX/2)/100<<"  "<<Sy/100<<"  "<<Vx<<"  "<<Vy<<"  "<<Va<<"  "<<ParFai<<"  "<<Fx<<"  "<<Fy<<"  "<<ParTor<<endl;
+	for( int p=0; p<ParticleNum; ++p )
+	{
+		ParticleData & t = Particle[p];
+		TrackFile<<NowStep<<"  "<<p<<"  "<<Mass<<"  "<<(t.Sx+ParMove-DX/2)/100<<"  "<<t.Sy/100<<"  "<<t.Vx<<"  "<<t.Vy<<"  "<<t.Va<<"  "<<t.ParFai<<"  "<<t.Fx<<"  "<<t.Fy<<"  "<<t.ParTor<<endl;
+	}
 #else
 	char FileName[128];
 	ofstream File;
