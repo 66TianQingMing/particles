@@ -1,5 +1,7 @@
 #include <conio.h>
 #include <cstdlib>
+#include <direct.h>
+#include <errno.h>
 #include <fstream> 
 #include <iomanip>
 #include <iostream> 
@@ -86,6 +88,12 @@ int main( int argc,char *argv[] )
 //*************************************************************************************************
 void Initialize()
 {
+	if( _mkdir("result")!=0 && errno!=EEXIST )
+	{
+		cout<<"Create result directory error ..."<<endl<<flush;
+		cin.get();   exit(1);
+	}
+
 	Density	  = 1;
 	Tau		  = 0.75;
 	BcType    = LL2; 
@@ -365,7 +373,7 @@ void SaveData()
 	if( NowStep == 0 )
 	{ 
 		char FileName[128];
-		sprintf( FileName, "Migration_%d_%d_N%d_A%3.2f_B%3.2f.txt", DX-1, DY-1, ParticleNum, Particle[0].ParA, Particle[0].ParB );
+		sprintf( FileName, "result\\Migration_%d_%d_N%d_A%3.2f_B%3.2f.txt", DX-1, DY-1, ParticleNum, Particle[0].ParA, Particle[0].ParB );
 		TrackFile.open( FileName );
 		TrackFile<<"Step   Particle   Mass   Sx   Sy   Vx   Vy   Va   Fai   Fx   Fy   Tor"<<endl;
 	}
@@ -377,7 +385,7 @@ void SaveData()
 #else
 	char FileName[128];
 	ofstream File;
-	sprintf( FileName, "Velocity_%s_T%3.2f_R%3.2f.txt", BcName[BcType], Tau, Radius*2 );
+	sprintf( FileName, "result\\Velocity_%s_T%3.2f_R%3.2f.txt", BcName[BcType], Tau, Radius*2 );
 	File.open( FileName );
 
 	File<<"Scale   ExactUx   Ux   Ux1   Ux2   Density"<<endl;
@@ -397,11 +405,12 @@ void SaveFlowField()
 {
 	char FileName[128];
 	ofstream File;
-	sprintf( FileName, "FlowField_%08d.txt", NowStep );
+	sprintf( FileName, "result\\FlowField_%08d.txt", NowStep );
 	File.open( FileName );
 
 	File<<setprecision(12);
 	File<<"# Step "<<NowStep<<endl;
+	File<<"# GridSize "<<DX<<" "<<DY<<endl;
 	File<<"# ParticleNum "<<ParticleNum<<endl;
 	for( int p=0; p<ParticleNum; ++p )
 	{

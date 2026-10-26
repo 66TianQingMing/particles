@@ -33,9 +33,6 @@ ipch/
 *.exp
 
 # Generated simulation results
-Migration_*.txt
-Velocity_*.txt
-FlowField_*.txt
-FlowField_*.png
+result/
 __pycache__/
 *.pyc
