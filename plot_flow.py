@@ -1,4 +1,5 @@
 import argparse
+import io
 import math
 from pathlib import Path
 
@@ -18,10 +19,21 @@ def read_flow_field(file_name):
     particles = []
     field_header = False
     grid_size = None
+    data_lines = []
     with open(file_name, "r", encoding="utf-8") as file:
         for line in file:
-            if not line.startswith("#"):
-                break
+            line_text = line.strip()
+            if not line_text:
+                continue
+            if line_text.upper().startswith("VARIABLES"):
+                variable_names = ["X", "Y", "Type", "Density", "Vx", "Vy"]
+                field_header = all(('"%s"' % name).upper() in line_text.upper() for name in variable_names)
+                continue
+            if line_text.upper().startswith("TITLE") or line_text.upper().startswith("ZONE"):
+                continue
+            if not line_text.startswith("#"):
+                data_lines.append(line)
+                continue
             words = line.split()
             if words[1:] == ["X", "Y", "Type", "Density", "Vx", "Vy"]:
                 field_header = True
@@ -39,8 +51,10 @@ def read_flow_field(file_name):
 
     if not field_header:
         raise ValueError("not a flow-field snapshot")
+    if len(data_lines) == 0:
+        raise ValueError("flow-field snapshot contains no grid data")
 
-    data = np.atleast_2d(np.loadtxt(file_name, comments="#"))
+    data = np.atleast_2d(np.loadtxt(io.StringIO("".join(data_lines))))
     if grid_size is not None and len(data) != grid_size[0]*grid_size[1]:
         raise ValueError(
             "incomplete file: %d rows, but GridSize %d x %d requires %d rows"
@@ -61,12 +75,18 @@ def reshape_field(data):
             % (len(data), nx, ny, nx*ny)
         )
 
-    x = data[:, 0].reshape(nx, ny).T
-    y = data[:, 1].reshape(nx, ny).T
-    node_type = data[:, 2].reshape(nx, ny).T
-    density = data[:, 3].reshape(nx, ny).T
-    vx = data[:, 4].reshape(nx, ny).T
-    vy = data[:, 5].reshape(nx, ny).T
+    if len(data)>1 and data[1,0]!=data[0,0]:
+        shape = (ny, nx)
+        transpose = False
+    else:
+        shape = (nx, ny)
+        transpose = True
+
+    field = []
+    for n in range(6):
+        value = data[:, n].reshape(shape)
+        field.append(value.T if transpose else value)
+    x, y, node_type, density, vx, vy = field
     return x, y, node_type, density, vx, vy
 
 

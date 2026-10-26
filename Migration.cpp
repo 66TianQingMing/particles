@@ -375,8 +375,11 @@ void SaveData()
 		char FileName[128];
 		sprintf( FileName, "result\\Migration_%d_%d_N%d_A%3.2f_B%3.2f.dat", DX-1, DY-1, ParticleNum, Particle[0].ParA, Particle[0].ParB );
 		TrackFile.open( FileName );
-		TrackFile<<"Step   Particle   Mass   Sx   Sy   Vx   Vy   Va   Fai   Fx   Fy   Tor"<<endl;
+		TrackFile<<"TITLE = \"Particle Migration Track\""<<endl;
+		TrackFile<<"VARIABLES = \"Step\" \"Particle\" \"Mass\" \"Sx\" \"Sy\" \"Vx\" \"Vy\" \"Va\" \"Fai\" \"Fx\" \"Fy\" \"Tor\""<<endl;
 	}
+	TrackFile<<"ZONE T=\"Step "<<NowStep<<"\", I="<<ParticleNum
+		<<", DATAPACKING=POINT, STRANDID=1, SOLUTIONTIME="<<NowStep<<endl;
 	for( int p=0; p<ParticleNum; ++p )
 	{
 		ParticleData & t = Particle[p];
@@ -388,7 +391,9 @@ void SaveData()
 	sprintf( FileName, "result\\Velocity_%s_T%3.2f_R%3.2f.dat", BcName[BcType], Tau, Radius*2 );
 	File.open( FileName );
 
-	File<<"Scale   ExactUx   Ux   Ux1   Ux2   Density"<<endl;
+	File<<"TITLE = \"Poiseuille Velocity Profile\""<<endl;
+	File<<"VARIABLES = \"Scale\" \"ExactUx\" \"Ux\" \"Ux1\" \"Ux2\" \"Density\""<<endl;
+	File<<"ZONE T=\"Step "<<NowStep<<"\", I="<<DY<<", DATAPACKING=POINT"<<endl;
 	File<<"0   0   0   0   0   0"<<endl;
 	for( int j=1; j<DY-1; ++j )
 	{
@@ -409,6 +414,8 @@ void SaveFlowField()
 	File.open( FileName );
 
 	File<<setprecision(12);
+	File<<"TITLE = \"Particle Migration Flow Field\""<<endl;
+	File<<"VARIABLES = \"X\" \"Y\" \"Type\" \"Density\" \"Vx\" \"Vy\""<<endl;
 	File<<"# Step "<<NowStep<<endl;
 	File<<"# GridSize "<<DX<<" "<<DY<<endl;
 	File<<"# ParticleNum "<<ParticleNum<<endl;
@@ -418,9 +425,11 @@ void SaveFlowField()
 		File<<"# Particle "<<p<<" Sx "<<t.Sx+ParMove<<" Sy "<<t.Sy
 			<<" A "<<t.ParA<<" B "<<t.ParB<<" Fai "<<t.ParFai<<endl;
 	}
-	File<<"# X Y Type Density Vx Vy"<<endl;
+	File<<"ZONE T=\"Step "<<NowStep<<"\", I="<<DX<<", J="<<DY
+		<<", DATAPACKING=POINT, STRANDID=1, SOLUTIONTIME="<<NowStep<<endl;
 
-	FOR_iDX_jDY
+	for( int j=0; j<DY; ++j )
+	for( int i=0; i<DX; ++i )
 	{
 		GridData & t = Grid[i][j];
 		File<<D(i)+ParMove<<" "<<j<<" "<<t.Type<<" "<<t.Den<<" "<<t.Vx<<" "<<t.Vy<<endl;
