@@ -32,6 +32,9 @@ const int HBB		= 0;
 const int BFL		= 1;
 const int LL2		= 2;
 
+const int TRACK_OUTPUT = 0;
+const int FIELD_OUTPUT = 1;
+
 //*************************************************************************************************
 const int DQ = 9;
 const int Ex[DQ] = { 0,  1,  0, -1,  0,  1, -1, -1,  1 };

@@ -35,3 +35,7 @@ ipch/
 # Generated simulation results
 Migration_*.txt
 Velocity_*.txt
+FlowField_*.txt
+FlowField_*.png
+__pycache__/
+*.pyc

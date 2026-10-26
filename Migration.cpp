@@ -19,6 +19,7 @@ ofstream TrackFile;
 double ExactUx[DY], ExactUxMod, NormalErr1, NormalErr2;
 double Mass, Density, Tau, ReTau, Viscosity, Pressure, DenLeft, DenRight, Radius, Reynolds;		
 int    TaskNum=1, No, NowStep, AllStep, ShowStep, SaveStep, BeginTime, StepTime, LastTime, LinkNum, BcType;
+int    OutputType=TRACK_OUTPUT;
 
 double ParMove;
 
@@ -26,7 +27,9 @@ double ParMove;
 void Initialize();
 void SetFlowField();
 void ShowData();
+void SaveOutput();
 void SaveData();
+void SaveFlowField();
 void SaveTask();
 
 void GlobalCollide();
@@ -48,7 +51,7 @@ int main( int argc,char *argv[] )
 		Initialize();
 		SetFlowField();
 		ShowData( );
-		SaveData( );
+		SaveOutput( );
 
 		for( NowStep=1; NowStep<=AllStep; ++NowStep )	
 		{
@@ -64,7 +67,7 @@ int main( int argc,char *argv[] )
 #endif
 			MacroCalculate();
 
-			if( NowStep%SaveStep == 0 )  { SaveData(); }
+			if( NowStep%SaveStep == 0 )  { SaveOutput(); }
 			if( NowStep%ShowStep == 0 )  { TimeInterval();  ShowData(); }
 		}
 
@@ -349,6 +352,13 @@ void ShowData( )
 }
 
 //*************************************************************************************************
+void SaveOutput()
+{
+	if( OutputType == FIELD_OUTPUT )	SaveFlowField();
+	else							SaveData();
+}
+
+//*************************************************************************************************
 void SaveData()			
 {
 #ifdef MIGRATION
@@ -380,6 +390,33 @@ void SaveData()
 	File.close();
 #endif
 
+}
+
+//*************************************************************************************************
+void SaveFlowField()
+{
+	char FileName[128];
+	ofstream File;
+	sprintf( FileName, "FlowField_%08d.txt", NowStep );
+	File.open( FileName );
+
+	File<<setprecision(12);
+	File<<"# Step "<<NowStep<<endl;
+	File<<"# ParticleNum "<<ParticleNum<<endl;
+	for( int p=0; p<ParticleNum; ++p )
+	{
+		ParticleData & t = Particle[p];
+		File<<"# Particle "<<p<<" Sx "<<t.Sx+ParMove<<" Sy "<<t.Sy
+			<<" A "<<t.ParA<<" B "<<t.ParB<<" Fai "<<t.ParFai<<endl;
+	}
+	File<<"# X Y Type Density Vx Vy"<<endl;
+
+	FOR_iDX_jDY
+	{
+		GridData & t = Grid[i][j];
+		File<<D(i)+ParMove<<" "<<j<<" "<<t.Type<<" "<<t.Den<<" "<<t.Vx<<" "<<t.Vy<<endl;
+	}
+	File.close();
 }
 
 void SaveTask()
