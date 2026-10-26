@@ -373,7 +373,7 @@ void SaveData()
 	if( NowStep == 0 )
 	{ 
 		char FileName[128];
-		sprintf( FileName, "result\\Migration_%d_%d_N%d_A%3.2f_B%3.2f.txt", DX-1, DY-1, ParticleNum, Particle[0].ParA, Particle[0].ParB );
+		sprintf( FileName, "result\\Migration_%d_%d_N%d_A%3.2f_B%3.2f.dat", DX-1, DY-1, ParticleNum, Particle[0].ParA, Particle[0].ParB );
 		TrackFile.open( FileName );
 		TrackFile<<"Step   Particle   Mass   Sx   Sy   Vx   Vy   Va   Fai   Fx   Fy   Tor"<<endl;
 	}
@@ -385,7 +385,7 @@ void SaveData()
 #else
 	char FileName[128];
 	ofstream File;
-	sprintf( FileName, "result\\Velocity_%s_T%3.2f_R%3.2f.txt", BcName[BcType], Tau, Radius*2 );
+	sprintf( FileName, "result\\Velocity_%s_T%3.2f_R%3.2f.dat", BcName[BcType], Tau, Radius*2 );
 	File.open( FileName );
 
 	File<<"Scale   ExactUx   Ux   Ux1   Ux2   Density"<<endl;
@@ -405,7 +405,7 @@ void SaveFlowField()
 {
 	char FileName[128];
 	ofstream File;
-	sprintf( FileName, "result\\FlowField_%08d.txt", NowStep );
+	sprintf( FileName, "result\\FlowField_%08d.dat", NowStep );
 	File.open( FileName );
 
 	File<<setprecision(12);

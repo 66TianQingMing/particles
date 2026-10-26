@@ -173,7 +173,7 @@ def create_video(image_names, output_name, fps):
 
 def main():
     parser = argparse.ArgumentParser(description="Plot all particle and flow-field snapshots.")
-    parser.add_argument("--input-dir", default="result", help="Directory containing result text files")
+    parser.add_argument("--input-dir", default="result", help="Directory containing result data files")
     parser.add_argument("--output-dir", default="result/figure", help="Directory for generated images")
     parser.add_argument("--arrow-step", type=int, default=10, help="Grid interval between velocity arrows")
     parser.add_argument("--fps", type=int, default=10, help="Video frames per second")
@@ -191,7 +191,7 @@ def main():
     if video_name.exists():
         video_name.unlink()
 
-    file_names = sorted(input_dir.glob("*.txt"))
+    file_names = sorted(input_dir.glob("*.dat"))
     valid_files, value_min, value_max = find_color_range(file_names, args.density)
     if len(valid_files) == 0:
         print("Finished: no complete flow-field snapshot was found in %s" % input_dir)
